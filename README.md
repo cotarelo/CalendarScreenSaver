@@ -15,15 +15,22 @@ Requiere las herramientas de línea de comandos de Xcode (`swiftc`) y macOS 14 o
 ```bash
 cd saver && ./build.sh
 cp -R CalendarScreenSaver.saver ~/Library/Screen\ Savers/
-cd ../agenda && ./build.sh
-cp -R FractalAgenda.app ~/Applications/
+cd ../agenda && ./build.sh && ./install-agent.sh
 ```
 
-Después abre `~/Applications/FractalAgenda.app` una vez y concede el acceso a Calendario.
+Después abre `~/Applications/FractalAgenda.app` una vez y concede el acceso a Calendario en Ajustes → Privacidad y seguridad → Calendarios.
 
-## Actualización automática
+## ⚠️ Actualización automática (MUY IMPORTANTE)
 
-Para refrescar los eventos cada 30 minutos, crea un LaunchAgent en `~/Library/LaunchAgents/` que ejecute `~/Applications/FractalAgenda.app/Contents/MacOS/FractalAgenda` con `StartInterval` 1800.
+**Sin este paso, los eventos nunca se actualizan y el salvapantallas muestra datos antiguos.**
+
+Ejecuta `agenda/install-agent.sh` después de compilar el ayudante. Instala `FractalAgenda.app` en `~/Applications` y crea el LaunchAgent `local.fractalagenda`, que lo ejecuta cada 30 minutos (`StartInterval` 1800) y al iniciar sesión.
+
+Para desactivarlo:
+
+```bash
+launchctl bootout gui/$(id -u)/local.fractalagenda && rm ~/Library/LaunchAgents/local.fractalagenda.plist
+```
 
 ## Asignación de calendarios
 
