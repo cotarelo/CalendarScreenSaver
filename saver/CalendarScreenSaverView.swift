@@ -3,14 +3,18 @@ import AppKit
 
 /// Salvapantallas: fondo negro, fecha arriba y dos columnas con los eventos de hoy.
 /// Trabajo (rojo) a la izquierda, personal (azul tipo Google Calendar) a la derecha.
-/// Los eventos los escribe el ayudante FractalAgenda en agenda.json dentro del
-/// contenedor de este salvapantallas (este proceso no puede pedir acceso a Calendario).
+/// Solo se muestran los eventos que aún no han terminado.
+///
+/// Los eventos los escribe el ayudante FractalAgenda en /Users/Shared/FractalAgenda/agenda.json
+/// (este proceso no puede pedir acceso a Calendario).
 @objc(CalendarScreenSaverView)
 class CalendarScreenSaverView: ScreenSaverView {
 
     private struct AgendaItem {
         let time: String
         let title: String
+        let allDay: Bool
+        let end: Date?
     }
 
     private var work: [AgendaItem] = []
@@ -21,10 +25,8 @@ class CalendarScreenSaverView: ScreenSaverView {
     private let workColor = NSColor(calibratedRed: 1.0, green: 0.23, blue: 0.19, alpha: 1.0)      // rojo
     private let personalColor = NSColor(calibratedRed: 0.10, green: 0.45, blue: 0.91, alpha: 1.0) // azul Google
 
-    private lazy var dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = locale
-        f.dateFormat = "EEEE d 'de' MMMM"
+    private let isoFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
         return f
     }()
 
@@ -53,9 +55,7 @@ class CalendarScreenSaverView: ScreenSaverView {
     // MARK: - Datos
 
     private var agendaURL: URL {
-        // Dentro del contenedor del salvapantallas: NSHomeDirectory() apunta ahí.
-        URL(fileURLWithPath: NSHomeDirectory())
-            .appendingPathComponent("Library/Application Support/FractalClock/agenda.json")
+        URL(fileURLWithPath: "/Users/Shared/FractalAgenda/agenda.json")
     }
 
     private func loadAgenda() {
@@ -83,9 +83,18 @@ class CalendarScreenSaverView: ScreenSaverView {
     private func parse(_ value: Any?) -> [AgendaItem] {
         guard let list = value as? [[String: Any]] else { return [] }
         return list.map { item in
-            AgendaItem(time: item["time"] as? String ?? "",
-                       title: item["title"] as? String ?? "(sin título)")
+            AgendaItem(
+                time: item["time"] as? String ?? "",
+                title: item["title"] as? String ?? "(sin título)",
+                allDay: item["allDay"] as? Bool ?? false,
+                end: (item["end"] as? String).flatMap { isoFormatter.date(from: $0) }
+            )
         }
+    }
+
+    /// Eventos que aún no han terminado (los de todo el día siempre se muestran).
+    private func upcoming(_ items: [AgendaItem], now: Date) -> [AgendaItem] {
+        items.filter { $0.allDay || ($0.end ?? .distantFuture) > now }
     }
 
     // MARK: - Dibujo
@@ -108,15 +117,16 @@ class CalendarScreenSaverView: ScreenSaverView {
         NSColor.white.withAlphaComponent(0.2).setFill()
         NSRect(x: w / 2 - 0.5, y: h * 0.06, width: 1, height: h * 0.66).fill()
 
+        let now = Date()
         let columnWidth = w * 0.40
-        drawColumn(title: "Trabajo", items: work, color: workColor,
+        drawColumn(title: "Trabajo", items: upcoming(work, now: now), color: workColor,
                    left: w * 0.05, width: columnWidth, top: h * 0.705, height: h)
-        drawColumn(title: "Personal", items: personal, color: personalColor,
+        drawColumn(title: "Personal", items: upcoming(personal, now: now), color: personalColor,
                    left: w * 0.55, width: columnWidth, top: h * 0.705, height: h)
     }
 
-    /// Dibuja una columna alineada a la izquierda. Si los eventos no caben en
-    /// una sola, reparte el resto en una segunda subcolumna.
+    /// Una sola columna alineada a la izquierda. Si no caben todos los eventos,
+    /// se muestran los primeros.
     private func drawColumn(title: String, items: [AgendaItem], color: NSColor,
                             left: CGFloat, width: CGFloat, top: CGFloat, height h: CGFloat) {
         drawLeft(title, font: NSFont.systemFont(ofSize: h * 0.04, weight: .bold),
@@ -125,24 +135,18 @@ class CalendarScreenSaverView: ScreenSaverView {
         let rowHeight = h * 0.07
         let firstRowY = top - h * 0.085
         let bottomLimit = h * 0.06
-        let rowsPerSub = max(1, Int((firstRowY - bottomLimit) / rowHeight) + 1)
+        let rowsFit = max(1, Int((firstRowY - bottomLimit) / rowHeight) + 1)
 
         if items.isEmpty {
-            drawLeft("Sin eventos hoy", font: NSFont.systemFont(ofSize: h * 0.028, weight: .regular),
+            drawLeft("No quedan eventos hoy", font: NSFont.systemFont(ofSize: h * 0.028, weight: .regular),
                      color: color.withAlphaComponent(0.6), x: left, centerY: firstRowY)
             return
         }
 
-        let subCount = items.count > rowsPerSub ? 2 : 1
-        let subWidth = subCount == 2 ? width / 2 : width
         let font = NSFont.systemFont(ofSize: h * 0.03, weight: .regular)
-
-        for (index, item) in items.prefix(rowsPerSub * subCount).enumerated() {
-            let sub = index / rowsPerSub
-            let row = index % rowsPerSub
-            let x = left + CGFloat(sub) * subWidth
+        for (row, item) in items.prefix(rowsFit).enumerated() {
             let y = firstRowY - CGFloat(row) * rowHeight
-            drawEntry(item, font: font, color: color, x: x, width: subWidth - h * 0.02, centerY: y, height: h)
+            drawEntry(item, font: font, color: color, x: left, width: width, centerY: y, height: h)
         }
     }
 

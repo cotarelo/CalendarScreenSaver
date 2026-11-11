@@ -6,10 +6,11 @@ import EventKit
 
 let fm = FileManager.default
 let home = fm.homeDirectoryForCurrentUser
-let outDir = home.appendingPathComponent(
-    "Library/Containers/com.apple.ScreenSaver.Engine.legacyScreenSaver/Data/Library/Application Support/FractalClock")
+// Carpeta compartida (sin la protección de "datos de otras apps"), con permisos solo para el usuario.
+let outDir = URL(fileURLWithPath: "/Users/Shared/FractalAgenda")
 let outURL = outDir.appendingPathComponent("agenda.json")
-try? fm.createDirectory(at: outDir, withIntermediateDirectories: true)
+try? fm.createDirectory(at: outDir, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+try? fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: outDir.path)
 
 let store = EKEventStore()
 let sem = DispatchSemaphore(value: 0)
@@ -23,6 +24,7 @@ sem.wait()
 func write(_ object: [String: Any]) {
     if let data = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted]) {
         try? data.write(to: outURL, options: .atomic)
+        try? fm.setAttributes([.posixPermissions: 0o600], ofItemAtPath: outURL.path)
     }
 }
 
@@ -54,14 +56,17 @@ let personal = all.filter { !work.contains($0) }
 func items(_ calendars: [EKCalendar]) -> [[String: Any]] {
     guard !calendars.isEmpty else { return [] }
     let predicate = store.predicateForEvents(withStart: start, end: end, calendars: calendars)
+    // Se exportan todos los de hoy: el salvapantallas oculta los que ya han terminado.
     return store.events(matching: predicate)
         .sorted { $0.startDate < $1.startDate }
-        .prefix(12)
+        .prefix(40)
         .map { e in
             [
                 "time": e.isAllDay ? "Todo el día" : timeFormatter.string(from: e.startDate),
                 "title": e.title ?? "(sin título)",
-                "allDay": e.isAllDay
+                "allDay": e.isAllDay,
+                "start": isoFormatter.string(from: e.startDate),
+                "end": isoFormatter.string(from: e.endDate)
             ]
         }
 }

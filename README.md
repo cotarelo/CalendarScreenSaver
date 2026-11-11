@@ -5,8 +5,8 @@ Salvapantallas para macOS con los eventos de hoy de Calendario en dos columnas:
 
 ## Componentes
 
-- `saver/`: el salvapantallas (`CalendarScreenSaver.saver`). No puede pedir acceso a Calendario, así que lee `agenda.json`.
-- `agenda/`: el ayudante `FractalAgenda.app`. Tiene permiso de Calendario, lee los eventos de hoy y escribe `agenda.json` en el contenedor del salvapantallas.
+- `saver/`: el salvapantallas (`CalendarScreenSaver.saver`). No puede pedir acceso a Calendario, así que lee `/Users/Shared/FractalAgenda/agenda.json`. Muestra solo los eventos que aún no han terminado, una columna por calendario.
+- `agenda/`: el ayudante `FractalAgenda.app`. Tiene permiso de Calendario, lee los eventos de hoy y escribe `/Users/Shared/FractalAgenda/agenda.json` (carpeta solo legible por tu usuario).
 
 ## Compilar
 
@@ -45,3 +45,7 @@ El ayudante necesita acceso a Calendario una sola vez. Después:
 
 - Trabajo: calendarios de cuentas Exchange, excepto los que contienen "festivo", "cumplea", "birthday" o "holiday".
 - Personal: el resto de calendarios.
+
+## Permiso "Datos de otras apps"
+
+El ayudante escribe en `/Users/Shared/FractalAgenda/`, no en el contenedor del salvapantallas. Así macOS no le pide el permiso de "datos de otras apps". Si aún así aparece el aviso, concédelo una vez con **Permitir**.
