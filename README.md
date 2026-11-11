@@ -10,7 +10,7 @@ Salvapantallas para macOS con los eventos de hoy de Calendario en dos columnas:
 
 ## Compilar
 
-Requiere las herramientas de línea de comandos de Xcode (`swiftc`) y macOS 14 o posterior.
+Requiere las herramientas de línea de comandos de Xcode (`swiftc`) y macOS 14 o posterior. Los scripts compilan binarios universales (Apple Silicon e Intel). Los scripts compilan binarios universales (Apple Silicon e Intel).
 
 ```bash
 cd saver && ./build.sh
