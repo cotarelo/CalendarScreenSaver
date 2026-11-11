@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>CalendarScreenSaver</string>
 	<key>CFBundleIdentifier</key>
-	<string>local.fractalclock.saver</string>
+	<string>local.calendarscreensaver.saver</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
