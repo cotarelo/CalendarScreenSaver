@@ -17,6 +17,9 @@ done
 
 lipo -create build-arm64 build-x86_64 -output "$APP/Contents/MacOS/FractalAgenda"
 rm -f build-arm64 build-x86_64
-codesign --force --sign - "$APP"
+# Requisito de firma basado en el identificador (no en el hash del binario):
+# así macOS conserva el permiso de Calendario entre recompilaciones.
+codesign --force --sign - --identifier local.fractalagenda \
+  -r='designated => identifier "local.fractalagenda"' "$APP"
 echo "Built: $(pwd)/$APP"
 lipo -info "$APP/Contents/MacOS/FractalAgenda"

@@ -32,6 +32,15 @@ Para desactivarlo:
 launchctl bootout gui/$(id -u)/local.fractalagenda && rm ~/Library/LaunchAgents/local.fractalagenda.plist
 ```
 
+## Permisos de Calendario
+
+El ayudante necesita acceso a Calendario una sola vez. Después:
+
+- **Ya no debería volver a pedirlo.** `agenda/build.sh` firma el ayudante con un requisito basado en el identificador `local.fractalagenda`, no en el hash del binario. Así el permiso sobrevive a recompilaciones y reinstalaciones.
+- **No existe "permitir siempre" para apps sin firma de desarrollador.** La firma ad hoc no permite un permiso permanente explícito. Lo que sí funciona es conservar el identificador y la firma estable, que es lo que hace el script.
+- **Si macOS vuelve a pedirlo** (por ejemplo, tras cambiar de Mac o de firma), concédelo otra vez en Ajustes → Privacidad y seguridad → Calendarios.
+- **Si lo quitaste de la lista**, vuelve a abrir `~/Applications/FractalAgenda.app` para que aparezca el aviso.
+
 ## Asignación de calendarios
 
 - Trabajo: calendarios de cuentas Exchange, excepto los que contienen "festivo", "cumplea", "birthday" o "holiday".
