@@ -1,0 +1,4 @@
+*.saver/
+*.app/
+.build/
+.DS_Store
